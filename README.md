@@ -1,7 +1,7 @@
 # civ2-game-end
 
 How a game of Civilization II ends, as `core-turn-based-game` rules, following OpenCiv2's reconstruction of the original
-(`src/auto/game.cpp` `game_check_retirement`, `src/auto/civ.cpp` `civ_create`).
+(`src/auto/game.cpp` `game_check_retirement`, `src/auto/civ.cpp` `civ_create`, richardpenman/civ2@49f26ec).
 
 ## Endings
 
@@ -24,7 +24,9 @@ Civ2 brings a destroyed computer civilization back as a new one. It isn't here y
 per-square fertility from the world, and the advances it inherits need Civ2's advances. Until then a game can be
 conquered sooner than in Civ2. The numbers, for when it comes (OpenCiv2 `src/auto/civ.cpp`):
 
-- **When:** until turn 350 − 35 × level, so 350 on Chieftain down to 175 on Deity (`civ_create`, :4766).
+- **When:** until turn 350 − 35 × level, so 350 on Chieftain down to 175 on Deity, and only when the game's rules allow
+  eliminated civilizations to restart (`RULE_NO_RESTART_ELIMINATED` unset), which the game ignores on turn 0, the
+  start (`civ_create`).
 - **As whom:** a tribe of the destroyed civilization's colour, one not yet used first (`civ_create_pick_leader`).
 - **Where:** a random land square, fertile enough, far enough from cities and units, without a hut, the demands
   relaxing as the tries go on (`civ_create_find_start`). After turn 200, only on a landmass nobody has a city on.

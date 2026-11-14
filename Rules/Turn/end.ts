@@ -28,7 +28,7 @@ export const getRules = (
   ruleRegistry: RuleRegistry = ruleRegistryInstance
 ): End[] => [
   // One civilization is left, from a game that started with others: it conquered the world (OpenCiv2
-  //  `src/auto/civ.cpp:4776-4786`: fewer than 2 civilizations alive, game over reason 3). The barbarians are no
+  //  `src/auto/civ.cpp` `civ_create`, richardpenman/civ2@49f26ec: fewer than 2 civilizations alive, game over reason 3). The barbarians are no
   //  civilization. Civ2 checks as a civilization is destroyed; this checks once every player has moved.
   new End(
     'civ2-game-end:turn/end/conquest',

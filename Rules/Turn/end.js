@@ -12,7 +12,7 @@ const End_1 = require("@civ-clone/core-turn-based-game/Rules/End");
 const endGame_1 = require("@civ-clone/core-turn-based-game/lib/endGame");
 const getRules = (playerRegistry = PlayerRegistry_1.instance, playerWorldRegistry = PlayerWorldRegistry_1.instance, gameResultRegistry = GameResultRegistry_1.instance, ruleRegistry = RuleRegistry_1.instance) => [
     // One civilization is left, from a game that started with others: it conquered the world (OpenCiv2
-    //  `src/auto/civ.cpp:4776-4786`: fewer than 2 civilizations alive, game over reason 3). The barbarians are no
+    //  `src/auto/civ.cpp` `civ_create`, richardpenman/civ2@49f26ec: fewer than 2 civilizations alive, game over reason 3). The barbarians are no
     //  civilization. Civ2 checks as a civilization is destroyed; this checks once every player has moved.
     new End_1.default('civ2-game-end:turn/end/conquest', new Criterion_1.default(() => (0, conquest_1.isConquest)(playerRegistry, playerWorldRegistry)), new Effect_1.default((turn) => {
         (0, endGame_1.default)('conquest', (0, conquest_1.conqueror)(playerRegistry), gameResultRegistry, ruleRegistry, turn);

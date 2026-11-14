@@ -18,8 +18,8 @@ import Start from '@civ-clone/core-turn-based-game/Rules/Start';
 import Turn from '@civ-clone/core-turn-based-game/Turn';
 import endGame from '@civ-clone/core-turn-based-game/lib/endGame';
 
-// Civ2 checks retirement as each turn starts, before anyone moves (OpenCiv2 `src/auto/game.cpp:5294`, after
-//  `game_advance_turn`), with the years compared exactly (`game.cpp:5013-5034`).
+// Civ2 checks retirement as each turn starts, before anyone moves (OpenCiv2 `src/auto/game.cpp` `game_play_loop`,
+//  after `game_advance_turn`), with the years compared exactly (`game_check_retirement`, richardpenman/civ2@49f26ec).
 export const getRules = (
   gameResultRegistry: GameResultRegistry = gameResultRegistryInstance,
   ruleRegistry: RuleRegistry = ruleRegistryInstance,

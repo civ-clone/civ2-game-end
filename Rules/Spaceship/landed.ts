@@ -21,7 +21,8 @@ export const getRules = (
   turn: Turn = turnInstance
 ): Landed[] => [
   // The first ship to reach Alpha Centauri wins the game for its civilization; Civ2 rolls no success on arrival
-  //  (OpenCiv2 `src/auto/game.cpp:4583`).
+  //  (OpenCiv2 `src/auto/game.cpp` `game_advance_turn`,
+  //  richardpenman/civ2@49f26ec).
   new Landed(
     'civ2-game-end:spaceship/landed/game-over',
     new Effect((spaceship: Spaceship): void => {

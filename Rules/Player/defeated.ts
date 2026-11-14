@@ -27,7 +27,8 @@ export const getRules = (
   ruleRegistry: RuleRegistry = ruleRegistryInstance,
   turn: Turn = turnInstance
 ): Defeated[] => [
-  // The human's civilization destroyed ends the game for them (OpenCiv2 `src/auto/civ.cpp:4880`, game over reason 4).
+  // The human's civilization destroyed ends the game for them (OpenCiv2 `src/auto/civ.cpp`
+  //  `civ_check_destroyed`, richardpenman/civ2@49f26ec, game over reason 4).
   new Defeated(
     'civ2-game-end:player/defeated/destroyed',
     new Criterion((player: Player): boolean => isHuman(player, clientRegistry)),

@@ -11,7 +11,8 @@ const Effect_1 = require("@civ-clone/core-rule/Effect");
 const endGame_1 = require("@civ-clone/core-turn-based-game/lib/endGame");
 const isHuman_1 = require("@civ-clone/base-difficulty/lib/isHuman");
 const getRules = (clientRegistry = ClientRegistry_1.instance, gameResultRegistry = GameResultRegistry_1.instance, ruleRegistry = RuleRegistry_1.instance, turn = Turn_1.instance) => [
-    // The human's civilization destroyed ends the game for them (OpenCiv2 `src/auto/civ.cpp:4880`, game over reason 4).
+    // The human's civilization destroyed ends the game for them (OpenCiv2 `src/auto/civ.cpp`
+    //  `civ_check_destroyed`, richardpenman/civ2@49f26ec, game over reason 4).
     new Defeated_1.default('civ2-game-end:player/defeated/destroyed', new Criterion_1.default((player) => (0, isHuman_1.default)(player, clientRegistry)), new Effect_1.default(() => {
         (0, endGame_1.default)('destroyed', null, gameResultRegistry, ruleRegistry, turn);
     })),
