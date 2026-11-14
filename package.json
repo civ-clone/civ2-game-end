@@ -31,9 +31,9 @@
     "typescript": "^4.0.0"
   },
   "dependencies": {
-    "@civ-clone/base-difficulty": "github:civ-clone/base-difficulty#feat/human-and-level",
+    "@civ-clone/base-difficulty": "^0.1.0",
     "@civ-clone/base-game-end": "^0.1.0",
-    "@civ-clone/base-player": "github:civ-clone/base-player#feat/shared-player-checks",
+    "@civ-clone/base-player": "^0.1.2",
     "@civ-clone/core-client": "^0.1.4",
     "@civ-clone/core-engine": "^0.1.6",
     "@civ-clone/core-game": "^0.1.17",
