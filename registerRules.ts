@@ -1,0 +1,20 @@
+import { Game, defaultGame } from '@civ-clone/core-game';
+import gameOver from './Rules/GameOver/game-over';
+import playerDefeated from './Rules/Player/defeated';
+import spaceshipLanded from './Rules/Spaceship/landed';
+import turnEnd from './Rules/Turn/end';
+import turnStart from './Rules/Turn/start';
+
+export const register = (game: Game): void =>
+  game.rules.register(
+    ...gameOver(game.clients, game.engine),
+    ...playerDefeated(game.clients, game.gameResult, game.rules, game.turn),
+    ...spaceshipLanded(game.gameResult, game.rules, game.turn),
+    ...turnEnd(game.players, game.playerWorlds, game.gameResult, game.rules),
+    ...turnStart(game.gameResult, game.rules, game.year, game.engine)
+  );
+
+// The plugin loader imports each package for this side effect.
+register(defaultGame);
+
+export default register;
