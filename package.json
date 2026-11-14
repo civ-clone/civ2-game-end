@@ -36,7 +36,7 @@
     "@civ-clone/base-player": "github:civ-clone/base-player#feat/shared-player-checks",
     "@civ-clone/core-client": "^0.1.4",
     "@civ-clone/core-engine": "^0.1.6",
-    "@civ-clone/core-game": "^0.1.11",
+    "@civ-clone/core-game": "^0.1.17",
     "@civ-clone/core-game-year": "^0.1.4",
     "@civ-clone/core-player": "^0.1.10",
     "@civ-clone/core-player-world": "^0.1.14",
