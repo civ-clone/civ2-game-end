@@ -52,22 +52,11 @@ describe('respawn: the gate', (): void => {
     expect(rules.getById(RESPAWN_RULE)!.enabled()).false;
   });
 
-  it('brings a line back the k-th time with chance 1 / (k + 1)', (): void => {
-    expect(comesBackAgain(0, () => 0.99)).true;
+  it('brings a civilization used k times back with chance 1 / (k + 1)', (): void => {
     expect(comesBackAgain(1, () => 0.49)).true;
     expect(comesBackAgain(1, () => 0.5)).false;
     expect(comesBackAgain(2, () => 0.33)).true;
     expect(comesBackAgain(2, () => 0.34)).false;
-  });
-
-  it('counts comebacks along the line, and saves them', (): void => {
-    const rules = new RuleRegistry(),
-      game = new Game({ rules }),
-      [first, second] = [new Player(rules), new Player(rules)];
-
-    expect(comebacksOf(first, game.pendingEffects)).equal(0);
-    recordComeback(second, 1, game.pendingEffects);
-    expect(comebacksOf(second, game.pendingEffects)).equal(1);
   });
 });
 

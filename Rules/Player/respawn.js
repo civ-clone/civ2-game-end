@@ -39,7 +39,7 @@ const inheritable = (others, human, completed) => {
         .map(([AdvanceType]) => AdvanceType);
 };
 exports.inheritable = inheritable;
-const getRules = (game) => {
+const getRules = (game, { site: findSite } = {}) => {
     const human = (player) => (0, isHuman_1.default)(player, game.clients), level = () => (0, level_1.levelOf)(game.difficulty), completed = (player) => {
         try {
             return game.playerResearch
@@ -58,23 +58,30 @@ const getRules = (game) => {
         new Respawns_1.default(RuleIds_1.RESPAWNS_RULE, new Effect_1.default(() => game.turn.value() <= (0, exports.lastRespawnTurn)(level()))),
         // A computer civilization destroyed comes back, as a new civilization with a Settlers somewhere empty. `Low`, after
         //  the player has left the game.
-        new Defeated_1.default(RuleIds_1.RESPAWN_RULE, new Low_1.default(), new Criterion_1.default((player) => !human(player) && !(0, isBarbarian_1.default)(player)), new Criterion_1.default((player) => (0, respawn_1.respawns)(player, game.rules)), new Criterion_1.default(() => game.civilizations.length > 0), new Effect_1.default((defeated) => {
-            const comebacks = (0, comebacks_1.comebacksOf)(defeated, game.pendingEffects);
-            if (!(0, comebacks_1.comesBackAgain)(comebacks, game.rng)) {
+        new Defeated_1.default(RuleIds_1.RESPAWN_RULE, new Low_1.default(), new Criterion_1.default((player) => !human(player) && !(0, isBarbarian_1.default)(player)), new Criterion_1.default((player) => (0, respawn_1.respawns)(player, game.rules)), new Effect_1.default((defeated) => {
+            const comeback = (0, comebacks_1.default)(game);
+            if (comeback === null || (comeback.reuse && !comeback.comesBack)) {
                 return;
+            }
+            // A civilization reused is offered again, alone, so `addPlayer` draws it.
+            if (comeback.reuse) {
+                game.civilizations.register(comeback.civilization);
+                game.leaders.register(comeback.leader);
             }
             let site = null;
             const player = (0, respawn_1.default)(game, defeated, {
-                site: () => (site = (0, respawnSite_1.default)({
-                    cities: game.cities.entries(),
-                    distance: steps,
-                    fertility: (tile) => (0, fertility_1.default)(tile),
-                    goodyHuts: game.goodyHuts,
-                    landMasses: game.landMasses.entries(),
-                    randomNumberGenerator: game.rng,
-                    turn: game.turn.value(),
-                    units: game.units.entries(),
-                })),
+                site: () => (site = findSite
+                    ? findSite()
+                    : (0, respawnSite_1.default)({
+                        cities: game.cities.entries(),
+                        distance: steps,
+                        fertility: (tile) => (0, fertility_1.default)(tile),
+                        goodyHuts: game.goodyHuts,
+                        landMasses: game.landMasses.entries(),
+                        randomNumberGenerator: game.rng,
+                        turn: game.turn.value(),
+                        units: game.units.entries(),
+                    })),
                 // Civ2 has no starting advances to hold off: every civilization starts knowing nothing.
                 heldOff: [],
                 isHuman: human,
@@ -83,10 +90,13 @@ const getRules = (game) => {
                 inherits: () => level() > 0 && Math.floor(game.rng() * (level() + 1)) !== 0,
             });
             if (player === null || site === null) {
+                if (comeback.reuse) {
+                    game.civilizations.unregister(comeback.civilization);
+                    game.leaders.unregister(comeback.leader);
+                }
                 return;
             }
             const tile = site;
-            (0, comebacks_1.recordComeback)(player, comebacks + 1, game.pendingEffects);
             // The barbarians' units within 8 squares are removed (`civ_create_place_units` ~4532).
             game.units
                 .entries()

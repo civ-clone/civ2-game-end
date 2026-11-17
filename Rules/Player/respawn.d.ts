@@ -4,6 +4,7 @@ import Defeated from '@civ-clone/core-player/Rules/Defeated';
 import { Game } from '@civ-clone/core-game';
 import Player from '@civ-clone/core-player/Player';
 import Respawns from '@civ-clone/base-game-end/Rules/Respawns';
+import Tile from '@civ-clone/core-world/Tile';
 export type RespawnGame = AddPlayerGame &
   Pick<
     Game,
@@ -31,5 +32,12 @@ export declare const inheritable: (
   human: (player: Player) => boolean,
   completed: (player: Player) => (typeof Advance)[]
 ) => (typeof Advance)[];
-export declare const getRules: (game: RespawnGame) => (Defeated | Respawns)[];
+export interface RespawnRuleOptions {
+  /** Where it comes back: Civ2's search (`lib/respawnSite`) unless given. */
+  site?: () => Tile | null;
+}
+export declare const getRules: (
+  game: RespawnGame,
+  { site: findSite }?: RespawnRuleOptions
+) => (Defeated | Respawns)[];
 export default getRules;

@@ -1,9 +1,5 @@
 import { COMEBACKS_RULE_SET, RESPAWN_RULE, RESPAWNS_RULE } from '../../RuleIds';
-import {
-  comebacksOf,
-  comesBackAgain,
-  recordComeback,
-} from '../../lib/comebacks';
+import chooseComeback from '../../lib/comebacks';
 import respawn, { respawns } from '@civ-clone/base-game-end/lib/respawn';
 import Advance from '@civ-clone/core-science/Advance';
 import { AddPlayerGame } from '@civ-clone/base-player/lib/addPlayer';
@@ -81,7 +77,15 @@ export const inheritable = (
     .map(([AdvanceType]) => AdvanceType);
 };
 
-export const getRules = (game: RespawnGame): (Defeated | Respawns)[] => {
+export interface RespawnRuleOptions {
+  /** Where it comes back: Civ2's search (`lib/respawnSite`) unless given. */
+  site?: () => Tile | null;
+}
+
+export const getRules = (
+  game: RespawnGame,
+  { site: findSite }: RespawnRuleOptions = {}
+): (Defeated | Respawns)[] => {
   const human = (player: Player): boolean => isHuman(player, game.clients),
     level = (): number => levelOf(game.difficulty),
     completed = (player: Player): (typeof Advance)[] => {
@@ -113,28 +117,35 @@ export const getRules = (game: RespawnGame): (Defeated | Respawns)[] => {
         (player: Player): boolean => !human(player) && !isBarbarian(player)
       ),
       new Criterion((player: Player): boolean => respawns(player, game.rules)),
-      new Criterion((): boolean => game.civilizations.length > 0),
       new Effect((defeated: Player): void => {
-        const comebacks = comebacksOf(defeated, game.pendingEffects);
+        const comeback = chooseComeback(game);
 
-        if (!comesBackAgain(comebacks, game.rng)) {
+        if (comeback === null || (comeback.reuse && !comeback.comesBack)) {
           return;
+        }
+
+        // A civilization reused is offered again, alone, so `addPlayer` draws it.
+        if (comeback.reuse) {
+          game.civilizations.register(comeback.civilization);
+          game.leaders.register(comeback.leader);
         }
 
         let site: Tile | null = null;
 
         const player = respawn(game, defeated, {
           site: (): Tile | null =>
-            (site = respawnSite({
-              cities: game.cities.entries(),
-              distance: steps,
-              fertility: (tile: Tile): number => fertility(tile),
-              goodyHuts: game.goodyHuts,
-              landMasses: game.landMasses.entries(),
-              randomNumberGenerator: game.rng,
-              turn: game.turn.value(),
-              units: game.units.entries(),
-            })),
+            (site = findSite
+              ? findSite()
+              : respawnSite({
+                  cities: game.cities.entries(),
+                  distance: steps,
+                  fertility: (tile: Tile): number => fertility(tile),
+                  goodyHuts: game.goodyHuts,
+                  landMasses: game.landMasses.entries(),
+                  randomNumberGenerator: game.rng,
+                  turn: game.turn.value(),
+                  units: game.units.entries(),
+                })),
           // Civ2 has no starting advances to hold off: every civilization starts knowing nothing.
           heldOff: [],
           isHuman: human,
@@ -146,12 +157,15 @@ export const getRules = (game: RespawnGame): (Defeated | Respawns)[] => {
         });
 
         if (player === null || site === null) {
+          if (comeback.reuse) {
+            game.civilizations.unregister(comeback.civilization);
+            game.leaders.unregister(comeback.leader);
+          }
+
           return;
         }
 
         const tile: Tile = site;
-
-        recordComeback(player, comebacks + 1, game.pendingEffects);
 
         // The barbarians' units within 8 squares are removed (`civ_create_place_units` ~4532).
         game.units

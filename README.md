@@ -25,9 +25,10 @@ base-game-end's `respawn`:
 
 - **When** (`civ2-game-end:player/respawns/last-turn`, a `Respawns` rule): until turn 350 − 35 × level, so 350 on
   Chieftain down to 175 on Deity.
-- **Again and again** (`lib/comebacks`): a civilization that comes back in the place of one that came back k times
-  before comes back with chance 1 in k + 1, as Civ2 rolls for a tribe used before (`civ_create_pick_leader`). The count
-  is saved as a `PendingEffect` on the player that came back.
+- **As whom** (`lib/comebacks`, `civ_create_pick_leader`): a civilization not yet in the game while any is left, with
+  no roll. Once every civilization has played, one that has played and isn't in the game is drawn and comes back with
+  chance 1 in (times it has been used + 1); the use is counted either way, per civilization, and saved
+  (`civ2-game-end:civilization-uses`, a `PendingEffect`).
 - **Where** (`lib/respawnSite`, `civ_create_find_start`): Civ2's 2,000 tries, each relaxation in turn: land, fertile
   (civ2-world's `fertility`, 12 at first, 1 less every 32 tries; none in a city's radius, 8 at most near a city), at
   least 16 from a city (1 less every 128 tries, never under 2), on a land mass with 32 − turn / 16 fertile squares (1
@@ -42,8 +43,9 @@ base-game-end's `respawn`:
   (civ2-score).
 - `player:respawned` is emitted with the new player and the destroyed one (base-game-end).
 
-Not as the original: there are no fixed slots, so a civilization comes back as any civilization not yet in the game
-(none of its colour), and none comes back once every civilization has played. Who discovered an advance first isn't
+Not as the original: there are no colours or fixed slots (Dom), so a civilization comes back as any unused
+civilization rather than an unused tribe of its colour, and the reuse roll starts once every civilization has played
+rather than once every tribe of the colour has. Who discovered an advance first isn't
 kept, so an advance a computer player also knows counts as one a computer player discovered. Its science and tax rates
 are its `Added` rules'.
 

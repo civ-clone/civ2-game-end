@@ -40,6 +40,7 @@
     "@civ-clone/civ2-difficulty": "github:civ-clone/civ2-difficulty",
     "@civ-clone/civ2-world": "github:civ-clone/civ2-world",
     "@civ-clone/core-city": "^0.1.25",
+    "@civ-clone/core-civilization": "^0.1.9",
     "@civ-clone/core-client": "^0.1.4",
     "@civ-clone/core-engine": "^0.1.6",
     "@civ-clone/core-game": "^0.1.17",
