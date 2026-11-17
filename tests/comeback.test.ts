@@ -17,6 +17,11 @@ import Effect from '@civ-clone/core-rule/Effect';
 import { Game } from '@civ-clone/core-game';
 import { Land } from '@civ-clone/core-terrain/Types';
 import Leader from '@civ-clone/core-civilization/Leader';
+import PendingEffect from '@civ-clone/core-pending-effect/PendingEffect';
+import { gameForLoad } from '@civ-clone/core-save-game/gameForLoad';
+import { hydrate } from '@civ-clone/core-save-game/hydrate';
+import { registerClasses } from '@civ-clone/core-save-game/registerClasses';
+import { save } from '@civ-clone/core-save-game/save';
 import Player from '@civ-clone/core-player/Player';
 import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
 import PlayerWorld from '@civ-clone/core-player-world/PlayerWorld';
@@ -59,7 +64,13 @@ const setUp = async ({
   random = () => 0,
   turn = 45,
   unused = true,
-}: { random?: () => number; turn?: number; unused?: boolean } = {}) => {
+  findSite,
+}: {
+  random?: () => number;
+  turn?: number;
+  unused?: boolean;
+  findSite?: (site: Tile) => Tile | null;
+} = {}) => {
   const rules = new RuleRegistry(),
     clock = new Turn(),
     draws: number[] = [],
@@ -143,7 +154,9 @@ const setUp = async ({
       )
     ),
     new Destroyed(new Effect((unit: Unit) => destroyed.push(unit))),
-    ...getRules(game, { site: () => site })
+    ...getRules(game, {
+      site: () => (findSite ? findSite(site) : site),
+    })
   );
 
   // The defeated player leaves the game, as civ2-player's rules have it, before the respawn rule (`Low`).
@@ -258,28 +271,91 @@ describe('respawn: the comeback', (): void => {
       newcomer(unlucky.game, unlucky.person, unlucky.other, unlucky.barbarians)
     ).undefined;
     expect(timesUsed(Beta, unlucky.game.pendingEffects)).equal(2);
-    // Not left on offer for another to take.
-    expect(unlucky.game.civilizations.length).equal(0);
+    // Taken by the player that came back, and not left on offer for another to take.
+    [lucky, unlucky].forEach(({ game }) => {
+      expect(game.civilizations.includes(Beta)).false;
+      expect(game.leaders.includes(BetaLeader)).false;
+    });
+  });
+
+  it('takes a reused civilization off offer again when there is nowhere to come back, or the search fails', async (): Promise<void> => {
+    const nowhere = await setUp({
+        unused: false,
+        random: () => 0.49,
+        findSite: () => null,
+      }),
+      failing = await setUp({
+        unused: false,
+        random: () => 0.49,
+        findSite: () => {
+          throw new TypeError('no site');
+        },
+      });
+
+    nowhere.rules.process(Defeated, nowhere.defeated, nowhere.person);
+    expect(() =>
+      failing.rules.process(Defeated, failing.defeated, failing.person)
+    ).to.throw('no site');
+
+    [nowhere, failing].forEach(({ game }) => {
+      expect(game.players.length).equal(3);
+      expect(game.civilizations.includes(Beta)).false;
+      expect(game.leaders.includes(BetaLeader)).false;
+      // The use is counted all the same, as Civ2 counts the tribe it picked.
+      expect(timesUsed(Beta, game.pendingEffects)).equal(2);
+    });
   });
 
   it('rolls 1 in 3 for a civilization reused once already', async (): Promise<void> => {
-    const { game, rules, defeated, person } = await setUp({
-      unused: false,
-      random: () => 0.34,
-    });
-
-    game.pendingEffects.register(
-      new (require('@civ-clone/core-pending-effect/PendingEffect').default)(
-        CIVILIZATION_USES,
-        null,
-        { Beta: '1' }
-      )
+    const [unlucky, lucky] = await Promise.all(
+      [0.34, 0.33].map((value) => setUp({ unused: false, random: () => value }))
     );
 
-    rules.process(Defeated, defeated, person);
+    [unlucky, lucky].forEach(({ game, rules, defeated, person }) => {
+      game.pendingEffects.register(
+        new PendingEffect(CIVILIZATION_USES, null, { Beta: '1' })
+      );
+      rules.process(Defeated, defeated, person);
+      expect(timesUsed(Beta, game.pendingEffects)).equal(3);
+    });
 
-    expect(game.players.length).equal(3);
-    expect(timesUsed(Beta, game.pendingEffects)).equal(3);
+    // 0.34 × 3 = 1: stays out. 0.33 × 3 = 0: comes back.
+    expect(unlucky.game.players.length).equal(3);
+    expect(lucky.game.players.length).equal(4);
+    expect(
+      newcomer(
+        lucky.game,
+        lucky.person,
+        lucky.other,
+        lucky.barbarians
+      )!.civilization()
+    ).instanceOf(Beta);
+  });
+
+  it('keeps the uses through a save and a load', (): void => {
+    const game = new Game();
+
+    game.engine.registerPlugins({ '@civ-clone/civ2-game-end': 'test' });
+    registerClasses(game);
+    game.pendingEffects.register(
+      new PendingEffect(CIVILIZATION_USES, null, { Beta: '2' })
+    );
+
+    const file = JSON.parse(
+        JSON.stringify(save(game, { name: 'uses', createdAt: 0 }))
+      ),
+      loaded = gameForLoad({
+        classes: game.classes,
+        engine: game.engine,
+        rules: game.rules,
+      });
+
+    hydrate(file, loaded);
+
+    expect(timesUsed(Beta, loaded.pendingEffects)).equal(3);
+    expect(loaded.pendingEffects.entries()[0]).not.equal(
+      game.pendingEffects.entries()[0]
+    );
   });
 
   it('is switched off with its New Game setting', async (): Promise<void> => {

@@ -130,38 +130,48 @@ export const getRules = (
           game.leaders.register(comeback.leader);
         }
 
-        let site: Tile | null = null;
+        let site: Tile | null = null,
+          player: Player | null = null;
 
-        const player = respawn(game, defeated, {
-          site: (): Tile | null =>
-            (site = findSite
-              ? findSite()
-              : respawnSite({
-                  cities: game.cities.entries(),
-                  distance: steps,
-                  fertility: (tile: Tile): number => fertility(tile),
-                  goodyHuts: game.goodyHuts,
-                  landMasses: game.landMasses.entries(),
-                  randomNumberGenerator: game.rng,
-                  turn: game.turn.value(),
-                  units: game.units.entries(),
-                })),
-          // Civ2 has no starting advances to hold off: every civilization starts knowing nothing.
-          heldOff: [],
-          isHuman: human,
-          advances: (others: Player[]): (typeof Advance)[] =>
-            inheritable(others, human, completed),
-          // Each with chance level / (level + 1), none on Chieftain (`rand() % (difficulty + 1) != 0`).
-          inherits: (): boolean =>
-            level() > 0 && Math.floor(game.rng() * (level() + 1)) !== 0,
-        });
+        try {
+          player = respawn(game, defeated, {
+            site: (): Tile | null =>
+              (site = findSite
+                ? findSite()
+                : respawnSite({
+                    cities: game.cities.entries(),
+                    distance: steps,
+                    fertility: (tile: Tile): number => fertility(tile),
+                    goodyHuts: game.goodyHuts,
+                    landMasses: game.landMasses.entries(),
+                    randomNumberGenerator: game.rng,
+                    turn: game.turn.value(),
+                    units: game.units.entries(),
+                  })),
+            // Civ2 has no starting advances to hold off: every civilization starts knowing nothing.
+            heldOff: [],
+            isHuman: human,
+            advances: (others: Player[]): (typeof Advance)[] =>
+              inheritable(others, human, completed),
+            // Each with chance level / (level + 1), none on Chieftain (`rand() % (difficulty + 1) != 0`).
+            inherits: (): boolean =>
+              level() > 0 && Math.floor(game.rng() * (level() + 1)) !== 0,
+          });
+        } finally {
+          // `addPlayer` takes a reused civilization and its leader as the player joins. On any other path (no site, or
+          //  a throw) they are taken out again, so no other player can draw them.
+          if (comeback.reuse) {
+            if (game.civilizations.includes(comeback.civilization)) {
+              game.civilizations.unregister(comeback.civilization);
+            }
+
+            if (game.leaders.includes(comeback.leader)) {
+              game.leaders.unregister(comeback.leader);
+            }
+          }
+        }
 
         if (player === null || site === null) {
-          if (comeback.reuse) {
-            game.civilizations.unregister(comeback.civilization);
-            game.leaders.unregister(comeback.leader);
-          }
-
           return;
         }
 
